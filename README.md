@@ -70,22 +70,22 @@ client.observeConnectionState().subscript((connected) => {
 - 하드웨어에 제어 명령을 보낼 때는 `requestHwControl()`을 호출합니다.
 - `requestHwControl()` 함수의 파라미터는
 
-  - hwCmd : 제어명령입니다. 하드웨어ID와 명령어 형태입니다. (`{hwId}.{cmd}`)
-  - 두번째 파라미터부터는 제어명령에 따라 달라집니다. 없을 수도 있고, 여러개 존재할 수도 있습니다.
+  - 첫번째 파라미터 hwCmd는 제어명령입니다. 하드웨어ID와 명령어 가 조합된 형태입니다. (`{hwId}.{cmd}`). PC 프로그램은 cmd별로 하나의 함수를 만듭니다. 따라서 PC 프로그램에 있는 함수를 호출하는 것과 마찬가지입니다.
+  - 두번째 파라미터부터는 첫번째 파라미터인 제어명령에 따라 달라집니다. 없을 수도 있고, 여러개 존재할 수도 있습니다.
 
-- 아래의 예는 `arduino` 하드웨어의 13번 핀에 0을 쓰는 `digitalWrite` 명령을 보내는 예시입니다.
+- 아래의 예는 `arduino` 하드웨어의 13번 핀에 1을 쓰는 `digitalWrite` 명령을 보내는 예시입니다.
 
 ```js
 const response = await client.requestHwControl(
   'arduino.digitalWrite', // hardware cmd
   13, // pin number argument
-  0 // pin value argument
+  1 // pin value argument
 )
 ```
 
 ### 하드웨어로 부터 값을 읽기
 
-- 값을 읽을 때도 `requestHwControl()` 함수를 이용합니다. `read()` 같은 함수는 없습니다. 예를 들면, 5번 핀을 읽겠다는 요청을 전송하므로, `requestHwControl()` 함수를 이용하는 것입니다.
+- 값을 읽을 때도 `requestHwControl()` 함수를 이용합니다. `read()` 같은 함수는 없습니다. 예를 들면, 5번 핀을 읽겠다는 `요청을 전송`하므로, `requestHwControl()` 함수를 이용하는 것입니다.
 
 ```js
 const response = await client.requestHwControl(
