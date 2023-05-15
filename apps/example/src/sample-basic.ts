@@ -17,7 +17,8 @@ async function testDigitalRead(client: HcpClient) {
     'wiseXboard.digitalRead',
     pinNum
   )
-  console.log('result data: ' + response)
+  console.log('response headers: ', response.headers)
+  console.log('response body: ', response.bodyAsJson())
 }
 
 /**
@@ -31,7 +32,9 @@ async function testDigitalWrite(client: HcpClient) {
     pinNum,
     pinValue
   )
-  console.log('result data: ' + response)
+
+  console.log('response headers: ', response.headers)
+  console.log('response body: ', response.bodyAsJson())
 }
 
 async function run(client: HcpClient) {
@@ -40,8 +43,8 @@ async function run(client: HcpClient) {
   await sleepMs(3000)
 }
 
-async function main() {
-  const client = new HcpClient('ws://127.0.0.1:13997', 'normal')
+export async function sampleBasic() {
+  const client = new HcpClient('ws://127.0.0.1:13997')
   try {
     client.connect()
 
@@ -56,5 +59,3 @@ async function main() {
     client.close()
   }
 }
-
-main()

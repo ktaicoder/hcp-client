@@ -7,10 +7,19 @@
   - `packages/hcp-client` : HCP 통신 라이브러리(client side)
   - `apps/example` : `hcp-client`을 이용하는 예제 프로그램
 
-- AI 코디니 PC 프로그램은 HCP 서버로써 동작합니다.
-  - 그러므로, PC 프로그램을 실행한 후에, `apps/example/`의 예제 프로그램을 실행하면 PC 프로그램과 통신을 합니다.
+- AI 코디니 PC 프로그램은 HCP 서버로써 동작하고, `example`은 HCP 클라이언트이므로
+- PC 프로그램을 실행한 후에, `apps/example/`의 예제를 실행하면 PC 프로그램과 통신을 합니다.
+- 코디니 사이트의 블록코딩도 HCP 클라이언트로써 동작하기 때문에, PC 프로그램과 통신을 합니다.
+- 즉, PC 프로그램은 HCP 서버, example이나 코디니 블록코딩은 HCP 클라이언트입니다.
+- PC 프로그램에 신규 하드웨어를 추가했다면
+  블록코딩으로 테스트해야 하는데, 블록코딩으로 테스트하면 번거롭습니다. 여기서 제공하는 예제를 이용하여 PC 프로그램에 추가한 하드웨어를 간단히 테스트할 수 있습니다.
+
+- PC 프로그램의 소스코드는 아래 링크에 있습니다.
+  - https://github.com/ktaicoder/hw-pc
 
 ## Quick start
+
+예제를 실행하는 빠른 방법은 아래와 같습니다.
 
 ```bash
 # install dependencies
@@ -20,7 +29,7 @@ pnpm install
 pnpm dev
 ```
 
-## 예제
+## 예제 소스 코드
 
 ### 연결 및 끊기
 
@@ -172,3 +181,7 @@ async function main() {
 main()
 
 ```
+
+### 결과값 파싱
+
+- HCP 프로토콜은 웹소켓 바이너리 모드로 통신합니다.

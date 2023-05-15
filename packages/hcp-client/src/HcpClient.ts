@@ -1,7 +1,15 @@
-import { Observable, Subscription, filter, firstValueFrom, take, timeout } from 'rxjs'
+import {
+  Observable,
+  Subscription,
+  filter,
+  firstValueFrom,
+  take,
+  timeout,
+} from 'rxjs'
 import { HcpClientSocket } from './HcpClientSocket'
 import { HcpPacketHelper } from './HcpPacketHelper'
 import { HcpConnectionState, HcpPacket } from './types'
+import EventEmitter from 'events'
 
 function nextRequestId() {
   return Math.random().toString(36).substring(2) + Date.now()
@@ -10,14 +18,19 @@ function nextRequestId() {
 const REQUEST_TIMEOUT = 7000
 
 export class HcpClient {
+  private readonly eventEmitter: EventEmitter
   private readonly sock_: HcpClientSocket
 
   DEBUG = false
 
   private subscription_?: Subscription = undefined
 
-  constructor(websocketUrl: string, public clientType: 'blockcoding' | 'normal') {
+  constructor(
+    websocketUrl: string,
+    public clientType: 'blockcoding' | 'normal' = 'normal'
+  ) {
     this.sock_ = new HcpClientSocket(websocketUrl)
+    this.eventEmitter = new EventEmitter()
   }
 
   observeConnectionState = (): Observable<HcpConnectionState> => {
@@ -31,8 +44,8 @@ export class HcpClient {
       this.observeConnectionState() //
         .pipe(
           filter((it) => it === 'CONNECTED'),
-          take(1),
-        ),
+          take(1)
+        )
     )
   }
 
@@ -42,8 +55,12 @@ export class HcpClient {
     }
     const s = this.sock_
     this.subscription_ = new Subscription()
-    this.subscription_.add(s.observeConnectionState().subscribe(this.debugConnectionState_))
-    this.subscription_.add(s.observeHcpMessage().subscribe(this.debugHcpPacket_))
+    this.subscription_.add(
+      s.observeConnectionState().subscribe(this.debugConnectionState_)
+    )
+    this.subscription_.add(
+      s.observeHcpMessage().subscribe(this.debugHcpPacket_)
+    )
     if (cancel$) {
       this.subscription_.add(cancel$.pipe(take(1)).subscribe(this.close))
     }
@@ -55,12 +72,31 @@ export class HcpClient {
   }
 
   private debugHcpPacket_ = (msg: HcpPacket) => {
-    if (this.DEBUG) console.log('HcpClient.debugHcpPacket_() ' + msg.channelId() + ',' + msg.proc())
+    if (this.DEBUG)
+      console.log(
+        'HcpClient.debugHcpPacket_() ' + msg.channelId() + ',' + msg.proc()
+      )
   }
 
-  requestHwControl = async (hwCmd: string, ...args: unknown[]): Promise<HcpPacket> => {
+  requestHwControl = async (
+    hwCommand: string | { hwCmd: string; args?: any[] },
+    ...args: unknown[]
+  ): Promise<HcpPacket> => {
     const requestId = nextRequestId()
-    const [hwId, cmd] = hwCmd.split('.')
+    let hwId: string | undefined
+    let cmd: string | undefined
+    let cmdArgs: unknown[] = args
+    if (typeof hwCommand === 'string') {
+      const arr = hwCommand.split('.')
+      hwId = arr[0]
+      cmd = arr[1]
+    } else if (typeof hwCommand === 'object') {
+      const arr = hwCommand.hwCmd.split('.')
+      hwId = arr[0]
+      cmd = arr[1]
+      cmdArgs = hwCommand.args ?? []
+    }
+
     if (!hwId || !cmd) {
       throw new Error('unknown')
     }
@@ -73,7 +109,7 @@ export class HcpClient {
       body: {
         hwId,
         cmd,
-        args,
+        args: cmdArgs,
       },
     })
 
@@ -84,11 +120,14 @@ export class HcpClient {
     return firstValueFrom(
       this.sock_
         .observeResponseByRequestId(requestId) //
-        .pipe(timeout({ first: REQUEST_TIMEOUT })),
+        .pipe(timeout({ first: REQUEST_TIMEOUT }))
     )
   }
 
-  requestMetaCmd = async (cmd: string, ...args: unknown[]): Promise<HcpPacket> => {
+  requestMetaCmd = async (
+    cmd: string,
+    ...args: unknown[]
+  ): Promise<HcpPacket> => {
     const requestId = nextRequestId()
 
     const packet = HcpPacketHelper.createJsonPacket('meta,cmd', {
@@ -108,8 +147,12 @@ export class HcpClient {
     return firstValueFrom(
       this.sock_
         .observeResponseByRequestId(requestId) //
-        .pipe(timeout({ first: REQUEST_TIMEOUT })),
+        .pipe(timeout({ first: REQUEST_TIMEOUT }))
     )
+  }
+
+  observeHwNotifications = (): Observable<{ type: string }> => {
+    return this.sock_.observeNotifications('hw')
   }
 
   close = () => {

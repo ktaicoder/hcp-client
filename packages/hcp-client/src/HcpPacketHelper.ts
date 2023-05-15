@@ -24,7 +24,7 @@ function trimStr(s: string | null | undefined): string {
 }
 
 function parseChannel(
-  channel: string | null | undefined,
+  channel: string | null | undefined
 ): { channelId: string; proc: string } | undefined {
   if (!channel) return undefined
   let [channelId, proc] = channel.split(',', 2)
@@ -63,7 +63,7 @@ export class HcpPacketHelper {
   static mergeHeader(
     channel: string,
     contentType: string,
-    extraHeaders: Record<string, string> | null | undefined,
+    extraHeaders: Record<string, string> | null | undefined
   ): string {
     const headers = {
       channel,
@@ -87,11 +87,13 @@ export class HcpPacketHelper {
     data?: {
       header?: Record<string, string> | null
       body?: unknown | null
-    },
+    }
   ): string {
-    return `${HcpPacketHelper.mergeHeader(channel, 'json', data?.header)}\n\n${toJsonStr(
-      data?.body,
-    )}`
+    return `${HcpPacketHelper.mergeHeader(
+      channel,
+      'json',
+      data?.header
+    )}\n\n${toJsonStr(data?.body)}`
   }
 
   /**
@@ -105,11 +107,13 @@ export class HcpPacketHelper {
     data?: {
       header?: Record<string, string> | null
       body?: string | null
-    },
+    }
   ): string {
-    return `${HcpPacketHelper.mergeHeader(channel, 'text', data?.header)}\n\n${toTextStr(
-      data?.body,
-    )}`
+    return `${HcpPacketHelper.mergeHeader(
+      channel,
+      'text',
+      data?.header
+    )}\n\n${toTextStr(data?.body)}`
   }
 
   /**
@@ -126,7 +130,6 @@ export class HcpPacketHelper {
    */
   static parseBuffer(buffer: Buffer): HcpPacket | null {
     let buf = buffer
-    console.log({ buffer })
     const lines = [] as string[]
     let i = -1
     while ((i = buf.indexOf(LF)) > 0) {
@@ -149,7 +152,10 @@ export class HcpPacketHelper {
     })
     const channel = headers['channel']
     if (!channel || channel.length === 0) {
-      console.log('ignore invalid packet(channel is required):', buf2str(buffer))
+      console.log(
+        'ignore invalid packet(channel is required):',
+        buf2str(buffer)
+      )
       return null
     }
     const { channelId, proc } = parseChannel(headers['channel']) ?? {}
@@ -158,6 +164,11 @@ export class HcpPacketHelper {
       return null
     }
 
-    return new HcpPacket(channelId, proc, buf.length === 0 ? null : buf, headers)
+    return new HcpPacket(
+      channelId,
+      proc,
+      buf.length === 0 ? null : buf,
+      headers
+    )
   }
 }

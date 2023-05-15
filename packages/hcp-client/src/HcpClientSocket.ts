@@ -1,6 +1,14 @@
 import { Buffer } from 'node:buffer'
 import { TextEncoder } from 'node:util'
-import { BehaviorSubject, filter, Observable, Subject, Subscription, takeUntil } from 'rxjs'
+import {
+  BehaviorSubject,
+  filter,
+  map,
+  Observable,
+  Subject,
+  Subscription,
+  takeUntil,
+} from 'rxjs'
 import WebSocket from 'ws'
 import { HcpPacketHelper } from './HcpPacketHelper'
 import { HcpConnectionState, HcpPacket } from './types'
@@ -12,7 +20,9 @@ export class HcpClientSocket {
 
   private subscription_?: Subscription
 
-  private connectionState$ = new BehaviorSubject<HcpConnectionState>('DISCONNECTED')
+  private connectionState$ = new BehaviorSubject<HcpConnectionState>(
+    'DISCONNECTED'
+  )
 
   private destroyTrigger$ = new Subject<any>()
 
@@ -45,7 +55,9 @@ export class HcpClientSocket {
 
     this.webSocket_ = s
     this.connectionState$.next('CONNECTING')
-    this.subscription_ = this.message$.asObservable().subscribe(this.onReceiveHcpMessage_)
+    this.subscription_ = this.message$
+      .asObservable()
+      .subscribe(this.onReceiveHcpMessage_)
   }
 
   private onOpen_ = (_event: WebSocket.Event) => {
@@ -73,8 +85,8 @@ export class HcpClientSocket {
 
   private onReceiveHcpMessage_ = (msg: HcpPacket) => {
     const channelId = msg.channelId()
-    const channelMsg = msg.proc()
-    if (channelId === 'meta' && channelMsg === 'welcome') {
+    const proc = msg.proc()
+    if (channelId === 'meta' && proc === 'welcome') {
       if (this.connectionState$.value === 'PREPARING') {
         this.connectionState$.next('CONNECTED')
       } else {
@@ -94,18 +106,32 @@ export class HcpClientSocket {
     return this.textEncoder_.encode(text)
   }
 
-  observeResponseByChannelMsg = (channelId: string, channelMsg: string): Observable<HcpPacket> => {
+  observeResponseByChannel = (
+    channelId: string,
+    proc: string
+  ): Observable<HcpPacket> => {
     return this.observeMsg_().pipe(
-      filter((msg) => msg.channelId() === channelId && msg.proc() === channelMsg),
+      filter((msg) => msg.channelId() === channelId && msg.proc() === proc)
     )
   }
 
-  observeResponseByChannel = (channel: string): Observable<HcpPacket> => {
-    return this.observeMsg_().pipe(filter((msg) => msg.channelId() === channel))
+  observeResponseByChannelId = (channelId: string): Observable<HcpPacket> => {
+    return this.observeMsg_().pipe(
+      filter((msg) => msg.channelId() === channelId)
+    )
+  }
+
+  observeNotifications = (channelId: string): Observable<{ type: string }> => {
+    return this.observeMsg_().pipe(
+      filter((msg) => msg.channelId() === channelId && msg.proc() === 'notify'),
+      map((msg) => msg.bodyAsJson() as { type: string })
+    )
   }
 
   observeResponseByRequestId = (requestId: string): Observable<HcpPacket> => {
-    return this.observeMsg_().pipe(filter((msg) => msg.requestId() === requestId))
+    return this.observeMsg_().pipe(
+      filter((msg) => msg.requestId() === requestId)
+    )
   }
 
   send = (data: string | Buffer) => {
